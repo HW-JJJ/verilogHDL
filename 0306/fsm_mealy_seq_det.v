@@ -15,114 +15,66 @@ module fsm_mealy(
                     rd1_once = 3'b011,
                     rd1_twice = 3'b100;
 
-     //1.
-
-    always @ (posedge clk, posedge rst) begin
+    always @ (posedge clk or posedge rst) begin
         if (rst) begin            
             state <= start;
+            out_bit <= 1'b0;  
         end else begin            
             state <= next;
         end
     end
 
-    // 2. for continue next state
-        
     always @ (*) begin
-        
         next = state; 
 
         case (state)
             start : begin
-                if (in_bit == 0) begin
+                if (in_bit == 0) 
                     next = rd0_once;
-                end else if (in_bit == 1) begin
+                else if (in_bit == 1) 
                     next = rd1_once;
-                end 
             end
 
             rd0_once : begin
-                if (in_bit == 0) begin
+                if (in_bit == 0) 
                     next = rd0_twice;
-                end else if (in_bit == 1) begin
+                else if (in_bit == 1) 
                     next = rd1_once;
-                end
             end
 
             rd0_twice : begin
-                if (in_bit == 0) begin
+                if (in_bit == 0) 
                     next = rd0_twice;
-                end else if (in_bit == 1) begin
+                else if (in_bit == 1) 
                     next = rd1_once;
-                end
             end
             
             rd1_once : begin
-                if (in_bit == 0) begin
+                if (in_bit == 0) 
                     next = rd0_once;
-                end else if (in_bit == 1) begin
+                else if (in_bit == 1) 
                     next = rd1_twice;
-                end
             end
             
             rd1_twice : begin
-                if (in_bit == 0) begin
+                if (in_bit == 0) 
                     next = rd0_once;
-                end else if (in_bit == 1) begin
+                else if (in_bit == 1) 
                     next = rd1_twice;
-                end
             end
 
             default : next = state;
         endcase    
     end
-        
 
-    // 3. output combinational logic
-
-    always @ (*) begin
-        case (state)
-            start : begin
-                if (in_bit == 0) begin
-                    out_bit = 1'b0;
-                end else if (in_bit == 1) begin
-                    out_bit = 1'b1;
-                end 
-            end
-
-            rd0_once : begin
-                if (in_bit == 0) begin
-                    out_bit = 1'b1;
-                end else if (in_bit == 1) begin
-                    out_bit = 1'b0;
-                end
-            end
-
-            rd0_twice : begin
-                if (in_bit == 0) begin
-                    out_bit = 1'b1;
-                end else if (in_bit == 1) begin
-                    out_bit = 1'b0;
-                end
-            end
-            
-            rd1_once : begin
-                if (in_bit == 0) begin
-                    out_bit = 1'b0;
-                end else if (in_bit == 1) begin
-                    out_bit = 1'b1;
-                end
-            end
-            
-            rd1_twice : begin
-                if (in_bit == 0) begin
-                    out_bit = 1'b0;
-                end else if (in_bit == 1) begin
-                    out_bit = 1'b1;
-                end
-            end
-
-            default : out_bit = 1'b0;
-
-        endcase
-    end     
+    always @ (posedge clk or posedge rst) begin
+        if (rst) begin
+            out_bit <= 1'b0;
+        end else begin
+            case (next)
+                rd0_twice, rd1_twice: out_bit <= 1'b1; 
+                default: out_bit <= 1'b0;
+            endcase
+        end
+    end  
 endmodule
