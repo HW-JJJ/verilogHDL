@@ -4,6 +4,8 @@ module Top_Upcounter (
     input clk,
     input reset,
     input [2:0] sw,
+    input btn_run_stop,         
+    input btn_clear,              // btn : clear
     output [3:0] seg_comm,
     output [7:0] seg
 );
@@ -22,7 +24,7 @@ module Top_Upcounter (
     tick_100hz U_tick_100hz(
         .clk(clk),
         .reset(reset),
-        .run_stop(sw[0]),
+        .run_stop(btn_run_stop),
         .o_tick_100hz(w_tick_100hz)
     );
 
@@ -45,8 +47,8 @@ module Top_Upcounter (
     control_unit U_Control_unit (
         .clk(clk),
         .reset(reset),
-        .i_run_stop(sw[0]),  // input 
-        .i_clear(sw[1]),
+        .i_run_stop(btn_run_stop),  // input 
+        .i_clear(btn_clear),
         .o_run_stop(w_run_stop),
         .o_clear(w_clear)
     );
@@ -113,7 +115,7 @@ module counter_10000 (
 endmodule
 */
 
-// 100Mhz clk를 이용해 100hz 신호의 HIGH를 COUNT
+// 100hz tick 신호가 HIGH일 경우 1 ~ 9999 범위 COUNT
 module counter_tick(
     input clk,
     input reset,
@@ -138,6 +140,7 @@ module counter_tick(
     always @(*) begin
 
         counter_next = counter_reg;  // initial value
+
         if (clear == 1'b1) begin
             counter_next = 0;
         end 
@@ -175,7 +178,9 @@ module control_unit (
 
     // next combinational logic
     always @(*) begin
+        
         next = state;
+        
         case (state)
             STOP: begin
                 if (i_run_stop == 1'b1) begin
@@ -188,19 +193,22 @@ module control_unit (
                     next = state;
                 end
             end
+
             RUN: begin
-                if (i_run_stop == 1'b0) begin
+                if (i_run_stop == 1'b1) begin
                     next = STOP;
                 end 
                 else begin
                     next = state;
                 end
             end
+
             CLEAR: begin
-                if (i_clear == 1'b0) begin
+                if (i_clear == 1'b1) begin
                     next = STOP;
                 end
             end
+
             default: begin
                 next = state;
             end
@@ -209,19 +217,26 @@ module control_unit (
 
     // combinational output logic
     always @(*) begin
+
+        o_run_stop = 1'b0;
+        o_clear = 1'b0;
+
         case (state)
             STOP: begin
                 o_run_stop = 1'b0;
                 o_clear = 1'b0;
             end
+
             RUN: begin
                 o_run_stop = 1'b1;
                 o_clear = 1'b0;
             end
+
             CLEAR: begin
                 o_clear    = 1'b1;
-                o_run_stop = 1'b1;
+                // o_run_stop = 1'b1;
             end
+
             default: begin
                 o_run_stop = 1'b0;
                 o_clear = 1'b0;
