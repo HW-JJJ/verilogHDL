@@ -37,6 +37,7 @@ module Top_Upcounter (
     counter_tick U_counter_tick(
         .clk(clk),
         .reset(reset),
+        .clear(w_clear),
         .tick(w_tick_100hz),
         .counter(w_count)
     );
@@ -72,7 +73,8 @@ module tick_100hz(
                 if (r_cnt == 1_000_000-1) begin    // 마지막 cylce 에 tick에 해당하는 duty 생성 
                     r_cnt <= 0; // 초기화 
                     r_tick_100hz <= 1'b1;                                         
-                end else begin
+                end 
+                else begin
                     r_cnt <= r_cnt + 1;
                     r_tick_100hz <= 1'b0;
                 end
@@ -99,9 +101,11 @@ module counter_10000 (
         end else begin
             if (r_counter == 10000 - 1) begin
                 r_counter <= 0;
-            end else if (clear == 1'b1) begin
+            end 
+            else if (clear == 1'b1) begin
                 r_counter <= 0;
-            end else begin
+            end 
+            else begin
                 r_counter <= r_counter + 1;
             end
         end
@@ -113,6 +117,7 @@ endmodule
 module counter_tick(
     input clk,
     input reset,
+    input clear,
     input tick,
     output [$clog2(10_000) - 1 : 0]  counter
 );
@@ -133,13 +138,16 @@ module counter_tick(
     always @(*) begin
 
         counter_next = counter_reg;  // initial value
-
-        if (tick == 1'b1) begin                       // tick count
+        if (clear == 1'b1) begin
+            counter_next = 0;
+        end 
+        else if (tick == 1'b1) begin                       // tick count
             if (counter_reg == 10_000 -1)
                 counter_next = 0;
             else 
                 counter_next = counter_reg + 1;
         end     
+        
     end
 endmodule
 
@@ -172,16 +180,19 @@ module control_unit (
             STOP: begin
                 if (i_run_stop == 1'b1) begin
                     next = RUN;
-                end else if (i_clear == 1'b1) begin
+                end 
+                else if (i_clear == 1'b1) begin
                     next = CLEAR;
-                end else begin
+                end 
+                else begin
                     next = state;
                 end
             end
             RUN: begin
                 if (i_run_stop == 1'b0) begin
                     next = STOP;
-                end else begin
+                end 
+                else begin
                     next = state;
                 end
             end
