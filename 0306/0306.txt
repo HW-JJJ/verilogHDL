@@ -1,0 +1,45 @@
+0306
+
+3. gate primitives
+2개 이상 input 1개 출력 
+
+ex) gate_name(output, input1, input2, ..)
+출력값 지연
+3-state gate , buffer
+
+buf gate, not gate primitive 진리표 z -> x
+
+** 3-state buffer
+3상태 (0,1,z) 기반  
+bufif
+deassign
+force release
+
+* 가장 중요 (기술면접에 자주 나옴)
+time clock >= hold time + propagation delay + set up time + clock skew 이와 같이 클락을 결정
+metastable상태일 때 Q는 H/L둘다 아님 (모르는 상태)->시간이 지나면 H or L로 가게 된다
+-> 해결방법: synchronizer로 만든다-> 어떻게 만드냐? -> 레지스터를 2개3개정도 serial로 만든다.
+
+moore mealy model
+
+1) moore model 
+state reg -> cl for next state -> condition pass ->  
+at least 1 clk
+
+2) mealy model
+input directly go output c.l
+input 들어오는 시점에도 영향
+
+조합논리 회로에서 always @(*) 
+초기값 지정해야 latch 발생 x
+
+LATCH - Level trigger
+F/F   - Edge trigger
+syncronizer - i/o trigger를 받을 때 사용
+** CDC clock domain crossing 주파수가 변하는 구간
+서로 다른 clock domain 간 data를 주고 받는 것
+clock domain이 다르다? -> 사용 주파수가 다른 것
+=> metastable 문제가 발생할 수 -> system이 신뢰 불가
+
+FIFO 선입선출
+
