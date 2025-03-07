@@ -20,32 +20,31 @@ module tb_mealy;
     end
 
     initial begin
+        in_bit = 0; rst = 1;
 
-        clk = 0;
-        rst = 1;
-        in_bit = 0;
-
-        rst = 1; #10;  
-        rst = 0; #10;  
+        #10; rst = 0; 
         
-        in_bit = 0; #10;  // start -> rd0_once
-        in_bit = 0; #10;  // rd0_once -> rd0_twice
-        in_bit = 1; #10;  // rd0_twice -> rd1_once
-        in_bit = 0; #10;  // rd1_once -> rd0_once
-        in_bit = 1; #10;  // rd0_once -> rd1_twice
-        in_bit = 1; #10;  // rd1_twice -> rd1_twice
+        #10; in_bit = 0;  
+        #10; in_bit = 0;  
+        #10; in_bit = 1;  
+        #10; in_bit = 0;  
+        #10; in_bit = 1;  
+        #10; in_bit = 1;  
         
-        in_bit = 1; #10;  // start -> rd1_once
-        in_bit = 1; #10;  // rd1_once -> rd1_twice
-        in_bit = 0; #10;  // rd1_twice -> rd0_once
-        in_bit = 1; #10;  // rd0_once -> rd1_once
-        in_bit = 0; #10;  // rd1_once -> rd0_once
+        #10; rst = 1; 
+        #10; rst = 0; 
         
-        in_bit = 0; #10;  // start -> rd0_once
-        in_bit = 1; #10;  // rd0_once -> rd1_once
-        in_bit = 0; #10;  // rd1_once -> rd0_once
-        in_bit = 0; #10;  // rd0_once -> rd0_twice
+        #10; in_bit = 0; 
+        #10; in_bit = 1;         
+        #10; in_bit = 0;  
+        #10; in_bit = 0;  
         
-        $stop;
+        #10; in_bit = 1;  
+        #10; in_bit = 1;  
+        #10; in_bit = 0;  
+        #10; in_bit = 1;  
+        #10; in_bit = 0;  
+        
+        #10; $stop;
     end
 endmodule
