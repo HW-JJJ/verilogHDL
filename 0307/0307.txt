@@ -1,0 +1,15 @@
+0307
+
+moore machine
+
+1. input 신호 입력
+2. next state c.l  통과
+3. clk 신호 대기 
+4. posedge 발생시 state register = sequencial logic (f/f) 통과
+5. output c.l 통과
+
+** 상태를 항상 분리
+
+latch
+
+ -g [file name] -l[line number]
