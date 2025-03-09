@@ -12,4 +12,4 @@ moore machine
 
 latch
 
- -g [file name] -l[line number]
+"C:\Users\erios\Microsoft VS Code\Code.exe" -g [file name] -l[line number]
