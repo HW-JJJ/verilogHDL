@@ -145,37 +145,47 @@ module counter_tick_sec(
     input clk,
     input reset,
     input clear,
-    input tick,
+    input tick, // 100Hz 입력
     output [$clog2(60) - 1 : 0]  counter
 );
 
-    reg [$clog2(60) - 1 : 0] counter_reg ,  counter_next;
+    reg [$clog2(60) - 1 : 0] counter_reg, counter_next;
+    reg [6:0] tick_count;  // 0~99까지 카운트 (100Hz → 1Hz 변환용)
 
     assign counter = counter_reg;
 
     // state
     always @(posedge clk, posedge reset) begin
-        if (reset) 
+        if (reset) begin
             counter_reg <= 0;
-        else 
-            counter_reg <= counter_next;        
+            tick_count <= 0;
+        end 
+        else begin
+            
+            counter_reg <= counter_next;
+            
+            if (tick) begin
+                if (tick_count == 99)  // 100개 tick_100hz 받으면 1Hz로 변환
+                    tick_count <= 0;
+                else
+                    tick_count <= tick_count + 1;
+            end
+        end
     end
 
     // next state
     always @(*) begin
-
-        counter_next = counter_reg;  // initial value
+        counter_next = counter_reg;  // 기본값
 
         if (clear == 1'b1) begin
             counter_next = 0;
         end 
-        else if (tick == 1'b1) begin                       // tick count
-            if (counter_reg == 60 -1)
+        else if (tick && tick_count == 99) begin  // 100Hz -> 1Hz 변환
+            if (counter_reg == 60 - 1)
                 counter_next = 0;
             else 
                 counter_next = counter_reg + 1;
         end     
-        
     end
 endmodule
 
