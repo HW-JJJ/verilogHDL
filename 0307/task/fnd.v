@@ -31,13 +31,13 @@ module fnd_controller (
     );
 
 
-    digit_splitter_msec #(.cnt(100)) U_Digit_Splitter_msec (
+    digit_splitter #(.cnt(100)) U_Digit_Splitter_msec (
         .bcd(bcd_msec),
         .digit_1(w_digit_1_msec),
         .digit_10(w_digit_10_msec)
     );
     
-    digit_splitter_sec #(.cnt(60)) U_Digit_Splitter_sec (
+    digit_splitter #(.cnt(60)) U_Digit_Splitter_sec (
         .bcd(bcd_sec),
         .digit_1(w_digit_1_sec),
         .digit_10(w_digit_10_sec)
