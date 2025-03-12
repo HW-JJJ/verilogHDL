@@ -3,7 +3,6 @@
 module TOP_stopwatch(
     input clk,
     input reset,
-    input sw_mode,
     input btn_run,
     input btn_clear,
     output [6:0] o_msec, 
