@@ -3,7 +3,6 @@
 module TOP_watch(
     input clk,
     input reset,
-    input sw_mode,
     input sec,
     input min,
     input hour,
