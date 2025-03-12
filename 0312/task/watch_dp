@@ -18,7 +18,6 @@ module watch_dp(
         .clk(clk),
         .reset(reset),
         .run(1'b1),
-        .clear(clear),
         .o_clk(w_clk_100hz)
     );
 
@@ -26,7 +25,7 @@ module watch_dp(
         .clk(clk),
         .reset(reset),
         .tick(w_clk_100hz),
-        .cnt(clear),
+        .cnt(1'b1),
         .o_time(o_msec),
         .o_tick(w_msec_tick)
     );
@@ -63,13 +62,12 @@ module clk_div_100hz_watch(
     input clk,
     input reset,
     input run,
-    input clear,
     output o_clk
 );
 
     parameter FCOUNT = 1_000_000; // 10 for debug
     reg [$clog2(FCOUNT) - 1 : 0] counter_reg, counter_next;
-    reg clk_reg, clk_next;  // 출력을 f/f로 내보내기 위한
+    reg clk_reg, clk_next;  // 異쒕젰�쓣 f/f濡� �궡蹂대궡湲� �쐞�븳
     
     assign o_clk = clk_reg;  // final output
 
@@ -99,10 +97,6 @@ module clk_div_100hz_watch(
                 clk_next = 1'b0;
             end
         end 
-        else if (clear == 1'b1) begin
-            counter_next = 0;
-            clk_next = 1'b0;
-        end
     end
 endmodule
 
@@ -133,19 +127,20 @@ module time_counter_watch #(parameter TICK_COUNT = 100, BIT_WIDTH  = 7)(
     end
 
     // next logic
-    always @(*) begin
-
+      always @(*) begin
         count_next = count_reg;
-        tick_next = 1'b0; //tick_reg;  0 -> 1 -> 0
+        tick_next = 1'b0;
         
-        if(tick == 1'b1) begin
-            if (count_reg == TICK_COUNT -1) begin
-                count_next = 0;
-                tick_next = 1'b1;
-            end
-            else begin
-                count_next = count_reg + 1;
-                tick_next = 1'b0;
+        // tick �떊�샇媛� 1�씪 �븣 移댁슫�듃瑜� 利앷��떆�궎湲� �떆�옉
+        if (tick == 1'b1) begin
+            if (cnt == 1'b1) begin  // 踰꾪듉 �엯�젰�씠 1�씪 �븣留� 移댁슫�듃
+                if (count_reg == TICK_COUNT - 1) begin
+                    count_next = 0;
+                    tick_next = 1'b1;  // 二쇨린�쟻�쑝濡� tick 諛쒖깮
+                end else begin
+                    count_next = count_reg + 1;
+                    tick_next = 1'b0;
+                end
             end
         end
     end
