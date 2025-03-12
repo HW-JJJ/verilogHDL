@@ -1,14 +1,14 @@
-`timescale 1ns / 1ps
+`timescale 1ns/1ps
 
 module watch_cu(
     input clk,
     input reset,
-    input sec,    // 초 입력 (1비트)
-    input min,    // 분 입력 (1비트)
-    input hour,   // 시 입력 (1비트)
-    output reg o_sec,   // 1비트 출력
-    output reg o_min,   // 1비트 출력
-    output reg o_hour   // 1비트 출력
+    input sec,    
+    input min,    
+    input hour,   
+    output reg o_sec,   
+    output reg o_min,   
+    output reg o_hour  
 );
 
     reg [5:0] sec_reg, min_reg;
@@ -16,45 +16,47 @@ module watch_cu(
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            // 리셋 시 값 초기화
+            
             sec_reg <= 0;
             min_reg <= 0;
-            hour_reg <= 12;  // 초기값을 12로 설정
+            hour_reg <= 12;  
             o_sec <= 0;
             o_min <= 0;
-            o_hour <= 1;     // 12시 초기화 시 1로 설정 (1비트 출력)
+            o_hour <= 1;     
         end else begin
+            
             if (sec == 1) begin
                 if (sec_reg == 59) begin
                     sec_reg <= 0;
-                    o_sec <= 1;  
+                    o_sec <= 1;
                 end else begin
                     sec_reg <= sec_reg + 1;
                     o_sec <= 0;
                 end
             end
 
+          
             if (min == 1) begin
                 if (min_reg == 59) begin
                     min_reg <= 0;
-                    o_min <= 1;  
+                    o_min <= 1;
                 end else begin
                     min_reg <= min_reg + 1;
                     o_min <= 0;
                 end
             end
 
-            // 시 입력에 따라 값 증가
+           
             if (hour == 1) begin
                 if (hour_reg == 23) begin
-                    hour_reg <= 0;  // 24시가 되면 0시로 리셋
-                    o_hour <= 0;    // 0시일 때는 0
+                    hour_reg <= 0; 
+                    o_hour <= 0;   
                 end else begin
                     hour_reg <= hour_reg + 1;
                     if (hour_reg == 12) begin
-                        o_hour <= 1;  // 12시일 때만 1로 출력
+                        o_hour <= 1; 
                     end else begin
-                        o_hour <= 0;  // 그 외 시간대에는 0
+                        o_hour <= 0; 
                     end
                 end
             end
