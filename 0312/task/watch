@@ -1,0 +1,40 @@
+`timescale 1ns / 1ps
+
+module TOP_watch(
+    input clk,
+    input reset,
+    input sw_mode,
+    input sec,
+    input min,
+    input hour,
+    output [6:0] o_msec, 
+    output [5:0] o_sec, o_min,
+    output [4:0] o_hour
+    );
+
+    wire w_sec, w_min, w_hour;
+
+    watch_cu U1_watch_cu(
+        .clk(clk),
+        .reset(reset),
+        .sec(sec),
+        .min(min),
+        .hour(hour),
+        .o_sec(w_sec),
+        .o_min(w_min),
+        .o_hour(w_hour)
+
+    );
+
+    watch_dp U1_watch_dp(
+        .clk(clk),
+        .reset(reset),
+        .sec(w_sec),
+        .min(w_min),
+        .hour(w_hour),
+        .o_msec(o_msec), 
+        .o_sec(o_sec), 
+        .o_min(o_min), 
+        .o_hour(o_hour)   
+    );
+endmodule
