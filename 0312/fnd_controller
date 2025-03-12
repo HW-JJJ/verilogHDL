@@ -3,7 +3,7 @@
 module fnd_controller (
     input clk,
     input reset,
-    input sw_mode,
+    input [1:0] sw_mode,
     input [6:0] msec,
     input [5:0] sec,min,
     input [4:0] hour,
@@ -17,9 +17,9 @@ module fnd_controller (
                w_digit_1_min, w_digit_10_min,
                w_digit_1_hour, w_digit_10_hour;
 
-    wire w_clk_100hz, w_signal;
+    wire w_clk_100hz;
     wire [2:0] w_seg_sel;
-    wire [3:0] w_msec_sec, w_min_hour;
+    wire [3:0] w_msec_sec, w_min_hour, w_dot;
     
     clk_divider U_Clk_Divider (
         .clk(clk),
@@ -70,7 +70,7 @@ module fnd_controller (
         .digit_3(w_digit_10_sec),
         .digit_4(4'hf),  // dot 를 뿌리기 위한 4자리
         .digit_5(4'hf),
-        .digit_6(4'hf),
+        .digit_6(w_dot),
         .digit_7(4'hf),    
         .bcd(w_msec_sec)
     );
@@ -83,7 +83,7 @@ module fnd_controller (
         .digit_3(w_digit_10_hour),
         .digit_4(4'hf),  // dot 를 뿌리기 위한 4자리
         .digit_5(4'hf),
-        .digit_6(4'hf),
+        .digit_6(w_dot),
         .digit_7(4'hf),    
         .bcd(w_min_hour)
     );
@@ -95,18 +95,15 @@ module fnd_controller (
         .bcd(w_bcd)
     );
 
-    dp_blink U_dp_blink(
-        .msec(msec),
-        .dp_signal(w_signal)
-    );
-
     bcdtoseg U_bcdtoseg(
         .bcd(w_bcd),
-        .dp_signal(w_signal),
-        .seg_comm(fnd_comm), 
         .seg(fnd_font)
     );
 
+    compator_msec U_compator_msec(
+        .msec(msec),
+        .dot(w_dot)
+    );
 endmodule
 
 // horizental frame 
@@ -126,13 +123,12 @@ module clk_divider (
             r_counter <= 0;  // 리셋상태
             r_clk <= 1'b0;
         end else begin
-            // clock divide 계산, 100Mhz -> 200hz
             if (r_counter == FCOUNT - 1) begin
                 r_counter <= 0;
-                r_clk <= 1'b1;  // r_clk : 0->1
+                r_clk <= 1'b1;  
             end else begin
                 r_counter <= r_counter + 1;
-                r_clk <= 1'b0;  // r_clk : 0으로 유지.;
+                r_clk <= 1'b0;  
             end
         end
     end
@@ -176,7 +172,6 @@ module decoder_3x8 (
             default:  seg_comm = 4'b1111;
         endcase
     end
-
 endmodule
 
 module digit_splitter #(parameter BIT_WIDTH = 7) (
@@ -184,8 +179,8 @@ module digit_splitter #(parameter BIT_WIDTH = 7) (
     output [3:0] digit_1,
     output [3:0] digit_10
 );
-    assign digit_1 = bcd % 10;  // 10의 1의 자리
-    assign digit_10 = bcd / 10 % 10;  // 10의 10의 자리
+    assign digit_1 = bcd % 10;  // 1의 자리
+    assign digit_10 = bcd / 10 % 10;  // 10의 자리
 endmodule
 
 module mux_8x1 (
@@ -200,9 +195,7 @@ module mux_8x1 (
     input  [3:0] digit_7,    
     output reg [3:0] bcd
 );
-   
-    // * : input 모두 감시, 아니면 개별 입력 선택 할 수 있다.
-    // alwasys : 항상 감시한다 @이벤트 이하를 ()의 변화가 있으면, begin - end를 수행해라.
+
     always @(*) begin
         case (sel)
             3'b000 : bcd = digit_0;
@@ -219,45 +212,20 @@ module mux_8x1 (
 endmodule
 
 module mux_2x1(
-    input sw_mode,
+    input [1:0] sw_mode,
     input [3:0] msec_sec,
     input [3:0] min_hour,
     output reg [3:0] bcd
 );
     always @(*) begin
         case(sw_mode)
-            1'b0 : bcd = msec_sec; 
-            1'b1 : bcd = min_hour;
+            2'b00 : bcd = msec_sec; 
+            2'b01 : bcd = min_hour;
             default : bcd = 4'hf;
         endcase
     end
 endmodule
 
-/*
-module mux_4x1 (
-    input  [1:0] sel,
-    input  [3:0] digit_1,
-    input  [3:0] digit_10,
-    input  [3:0] digit_100,
-    input  [3:0] digit_1000,
-    output [3:0] bcd
-);
-    reg [3:0] r_bcd;
-    assign bcd = r_bcd;
-    // * : input 모두 감시, 아니면 개별 입력 선택 할 수 있다.
-    // alwasys : 항상 감시한다 @이벤트 이하를 ()의 변화가 있으면, begin - end를 수행해라.
-    always @(sel, digit_1, digit_10, digit_100, digit_1000) begin
-        case (sel)
-            2'b00:   r_bcd = digit_1;
-            2'b01:   r_bcd = digit_10;
-            2'b10:   r_bcd = digit_100;
-            2'b11:   r_bcd = digit_1000;
-            default: r_bcd = 4'bx;
-        endcase
-    end
-
-endmodule
-*/
 module bcdtoseg (
     input [3:0] bcd, 
     output reg [7:0] seg
@@ -279,24 +247,16 @@ module bcdtoseg (
             4'hB: seg = 8'h83;
             4'hC: seg = 8'hc6;
             4'hD: seg = 8'ha1;
-            4'hE: seg = 8'h86;
+            4'hE: seg = 8'h7f;
             4'hF: seg = 8'hff;
             default: seg = 8'hff;
         endcase
     end
 endmodule
 
-module dp_blink (
+module compator_msec (
     input [6:0] msec,
-    output reg dp_signal
+    output [3:0] dot
 );
-    always @(*) begin
-        
-        dp_signal = 0;
-        
-        if(msec < 50)
-            dp_signal = 1'b1;
-        else 
-            dp_signal = 1'b0;
-    end
+    assign dot = (msec < 50) ? 4'he : 4'hf; // dot on-off    
 endmodule
