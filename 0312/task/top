@@ -3,8 +3,8 @@
 module TOP(
     input clk,
     input reset,
-    input [1:0] sw_mode,
-    input [4:0] btn,
+    input [1:0] sw_mode, // sw0
+    input [3:0] btn,
     output [7:0] fnd_font,
     output [3:0] fnd_comm,
     output [3:0] led
@@ -15,8 +15,9 @@ module TOP(
     wire [6:0] w_msec_sch, w_msec_wch, w_o_msec;
     wire [5:0] w_sec_sch, w_sec_wch, w_min_sch, w_min_wch, w_o_sec, w_o_min;
     wire [4:0] w_hour_sch, w_hour_wch, w_o_hour;
-    wire [4:0] w_btn_sch, w_btn_wch;
+    wire [3:0] w_btn_sch, w_btn_wch;
 
+    // u0  l1 w2 d3
     demux_btn U0_demux_btn(
         .sw_mode(sw_mode[1]),
         .btn(btn),
@@ -26,23 +27,22 @@ module TOP(
     
     btn_debounce U1_1_btn_debounce_run(
         .clk(clk),
-        .reset(w_btn_sch[0]),
-        .i_btn(w_btn_sch[2]),
+        .reset(reset), // reset
+        .i_btn(w_btn_sch[1]), // run
         .o_btn(w_run)
     );
 
     btn_debounce U1_2_btn_debounce_clear(
         .clk(clk),
-        .reset(w_btn_sch[0]),
-        .i_btn(w_btn_sch[3]),
+        .reset(reset), // reset
+        .i_btn(w_btn_sch[2]), // clear
         .o_btn(w_clear)
     );
 
-    TOP_stopwatch U1_TOP_stopwatch(
+    TOP_stopwatch U1_TOP_stopwatch( // stopwatch - run&clear
         .clk(clk),
-        .reset(w_btn_sch[0]),
-        .sw_mode(sw_mode[0]),
-        .btn_run(w_run),
+        .reset(reset), // reset
+        .btn_run(w_run), 
         .btn_clear(w_clear),
         .o_msec(w_msec_sch), 
         .o_sec(w_sec_sch), 
@@ -52,29 +52,28 @@ module TOP(
 
     btn_debounce U2_1_btn_debounce_sec(
         .clk(clk),
-        .reset(w_btn_wch[0]),
-        .i_btn(w_btn_wch[1]),
+        .reset(reset), // reset
+        .i_btn(w_btn_wch[0]), // sec
         .o_btn(w_sec)
     );
     
     btn_debounce U2_2_btn_debounce_min(
         .clk(clk),
-        .reset(w_btn_wch[0]),
-        .i_btn(w_btn_wch[4]),
+        .reset(reset), // reset
+        .i_btn(w_btn_wch[3]), // min
         .o_btn(w_min)
     );
     
     btn_debounce U3_2_btn_debounce_hour(
         .clk(clk),
-        .reset(w_btn_wch[0]),
-        .i_btn(w_btn_wch[2]),
+        .reset(reset), // reset
+        .i_btn(w_btn_wch[1]), // hour
         .o_btn(w_hour)
     );
 
     TOP_watch U2_TOP_WATCH(
         .clk(clk),
-        .reset(w_btn_wch[0]),
-        .sw_mode(sw_mode[1]),
+        .reset(reset), // reset
         .sec(w_sec),
         .min(w_min),
         .hour(w_hour),
@@ -105,7 +104,7 @@ module TOP(
 
     fnd_controller U4_fnd_controller(
         .clk(clk),
-        .reset(btn[0]),
+        .reset(reset),
         .sw_mode(sw_mode[0]),
         .msec(w_o_msec),
         .sec(w_o_sec),
@@ -123,17 +122,23 @@ endmodule
 
 module demux_btn(
     input sw_mode,
-    input [4:0] btn,
-    output reg [4:0] btn_sch,
-    output reg [4:0] btn_wch
+    input [3:0] btn,
+    output reg [3:0] btn_sch,
+    output reg [3:0] btn_wch
 );
     always @(*) begin
         case(sw_mode)
-            1'b0 : btn_sch = btn;
-            1'b1 : btn_sch = btn;
+            1'b0 : begin
+                btn_sch = btn;  // sw_mode媛� 0�씪 �븣 btn_sch�뿉 btn �엯�젰
+                btn_wch = 4'h0; // btn_wch�뒗 0�쑝濡� 珥덇린�솕
+            end
+            1'b1 : begin
+                btn_sch = 4'h0; // btn_sch�뒗 0�쑝濡� 珥덇린�솕
+                btn_wch = btn;  // sw_mode媛� 1�씪 �븣 btn_wch�뿉 btn �엯�젰
+            end
             default : begin
-                btn_sch = 5'h0;
-                btn_wch = 5'h0;
+                btn_sch = 4'h0;
+                btn_wch = 4'h0;
             end
         endcase    
     end
@@ -141,6 +146,7 @@ endmodule
 
 module mux_2x1_bcd(
     input sw_mode_sch_wch,
+
     input [6:0] msec_sch, 
     input [5:0] sec_sch, 
     input [5:0] min_sch,
@@ -159,16 +165,22 @@ module mux_2x1_bcd(
     always @(*) begin
         case(sw_mode_sch_wch)
             1'b0 : begin
-                o_msec = msec_sch;
-                o_sec  = sec_sch;
-                o_sec  = min_sch;
-                o_sec  = hour_sch;
+                o_msec  = msec_sch;
+                o_sec   = sec_sch;
+                o_min   = min_sch;
+                o_hour  = hour_sch;
             end           
             1'b1 : begin
-                o_msec = msec_wch;
-                o_sec  = sec_wch;
-                o_sec  = min_wch;
-                o_sec  = hour_wch;
+                o_msec  = msec_wch;
+                o_sec   = sec_wch;
+                o_min   = min_wch;
+                o_hour  = hour_wch;
+            end
+            default : begin
+                o_msec  = 7'b0000000;
+                o_sec   = 6'b0000000;
+                o_min   = 6'b0000000;
+                o_hour  = 5'b0000000;
             end
         endcase
     end
