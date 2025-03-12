@@ -1,0 +1,190 @@
+`timescale 1ns / 1ps
+
+module TOP(
+    input clk,
+    input reset,
+    input [1:0] sw_mode,
+    input [4:0] btn,
+    output [7:0] fnd_font,
+    output [3:0] fnd_comm,
+    output [3:0] led
+    );
+
+    wire w_run, w_clear;
+    wire w_sec, w_min, w_hour;
+    wire [6:0] w_msec_sch, w_msec_wch, w_o_msec;
+    wire [5:0] w_sec_sch, w_sec_wch, w_min_sch, w_min_wch, w_o_sec, w_o_min;
+    wire [4:0] w_hour_sch, w_hour_wch, w_o_hour;
+    wire [4:0] w_btn_sch, w_btn_wch;
+
+    demux_btn U0_demux_btn(
+        .sw_mode(sw_mode[1]),
+        .btn(btn),
+        .btn_sch(w_btn_sch),
+        .btn_wch(w_btn_wch)
+    );
+    
+    btn_debounce U1_1_btn_debounce_run(
+        .clk(clk),
+        .reset(w_btn_sch[0]),
+        .i_btn(w_btn_sch[2]),
+        .o_btn(w_run)
+    );
+
+    btn_debounce U1_2_btn_debounce_clear(
+        .clk(clk),
+        .reset(w_btn_sch[0]),
+        .i_btn(w_btn_sch[3]),
+        .o_btn(w_clear)
+    );
+
+    TOP_stopwatch U1_TOP_stopwatch(
+        .clk(clk),
+        .reset(w_btn_sch[0]),
+        .sw_mode(sw_mode[0]),
+        .btn_run(w_run),
+        .btn_clear(w_clear),
+        .o_msec(w_msec_sch), 
+        .o_sec(w_sec_sch), 
+        .o_min(w_min_sch),
+        .o_hour(w_hour_sch)
+    );
+
+    btn_debounce U2_1_btn_debounce_sec(
+        .clk(clk),
+        .reset(w_btn_wch[0]),
+        .i_btn(w_btn_wch[1]),
+        .o_btn(w_sec)
+    );
+    
+    btn_debounce U2_2_btn_debounce_min(
+        .clk(clk),
+        .reset(w_btn_wch[0]),
+        .i_btn(w_btn_wch[4]),
+        .o_btn(w_min)
+    );
+    
+    btn_debounce U3_2_btn_debounce_hour(
+        .clk(clk),
+        .reset(w_btn_wch[0]),
+        .i_btn(w_btn_wch[2]),
+        .o_btn(w_hour)
+    );
+
+    TOP_watch U2_TOP_WATCH(
+        .clk(clk),
+        .reset(w_btn_wch[0]),
+        .sw_mode(sw_mode[1]),
+        .sec(w_sec),
+        .min(w_min),
+        .hour(w_hour),
+        .o_msec(w_msec_wch),
+        .o_sec(w_sec_wch),
+        .o_min(w_min_wch),
+        .o_hour(w_hour_wch)
+    );
+
+    mux_2x1_bcd U3_mux_2x1_bcd(
+        .sw_mode_sch_wch(sw_mode[1]),
+        
+        .msec_sch(w_msec_sch), 
+        .sec_sch(w_sec_sch), 
+        .min_sch(w_min_sch),
+        .hour_sch(w_hour_sch),
+        
+        .msec_wch(w_msec_wch), 
+        .sec_wch(w_sec_wch), 
+        .min_wch(w_min_wch),
+        .hour_wch(w_hour_wch),    
+        
+        .o_msec(w_o_msec), 
+        .o_sec(w_o_sec), 
+        .o_min(w_o_min),
+        .o_hour(w_o_hour)
+    );
+
+    fnd_controller U4_fnd_controller(
+        .clk(clk),
+        .reset(btn[0]),
+        .sw_mode(sw_mode[0]),
+        .msec(w_o_msec),
+        .sec(w_o_sec),
+        .min(w_o_min),
+        .hour(w_o_hour),
+        .fnd_font(fnd_font),
+        .fnd_comm(fnd_comm)
+    );
+
+    led_display U5_led_display(
+        .sw_mode(sw_mode),
+        .led(led)
+    );      
+endmodule
+
+module demux_btn(
+    input sw_mode,
+    input [4:0] btn,
+    output reg [4:0] btn_sch,
+    output reg [4:0] btn_wch
+);
+    always @(*) begin
+        case(sw_mode)
+            1'b0 : btn_sch = btn;
+            1'b1 : btn_sch = btn;
+            default : begin
+                btn_sch = 5'h0;
+                btn_wch = 5'h0;
+            end
+        endcase    
+    end
+endmodule
+
+module mux_2x1_bcd(
+    input sw_mode_sch_wch,
+    input [6:0] msec_sch, 
+    input [5:0] sec_sch, 
+    input [5:0] min_sch,
+    input [4:0] hour_sch,
+
+    input [6:0] msec_wch, 
+    input [5:0] sec_wch, 
+    input [5:0] min_wch,
+    input [4:0] hour_wch,
+
+    output reg [6:0] o_msec, 
+    output reg [5:0] o_sec, 
+    output reg [5:0] o_min,
+    output reg [4:0] o_hour
+);
+    always @(*) begin
+        case(sw_mode_sch_wch)
+            1'b0 : begin
+                o_msec = msec_sch;
+                o_sec  = sec_sch;
+                o_sec  = min_sch;
+                o_sec  = hour_sch;
+            end           
+            1'b1 : begin
+                o_msec = msec_wch;
+                o_sec  = sec_wch;
+                o_sec  = min_wch;
+                o_sec  = hour_wch;
+            end
+        endcase
+    end
+endmodule
+
+module led_display(
+    input [1:0] sw_mode,
+    output reg [3:0] led
+);
+    always @(*) begin
+        case(sw_mode)
+        2'b00 : led = 4'b0001;
+        2'b01 : led = 4'b0010;
+        2'b10 : led = 4'b0100;
+        2'b11 : led = 4'b1000;
+        default : led = 4'b0000;
+        endcase
+    end
+endmodule 
