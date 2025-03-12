@@ -299,6 +299,20 @@ module dp_blink (
     output reg dp_signal
 );
     always @(*) begin
-        dp_signal = msec[6];  // 0.5초마다 ON/OFF 변화
+        
+        dp_signal = 0;
+        
+        if(msec < 50)
+            dp_signal = 1'b1;
+        else 
+            dp_signal = 1'b0;
+
+        // dp_signal = msec[6];
+        /*
+        if (msec == 99)
+            dp_signal = 1'b1;
+        else
+            dp_signal = 1'b0;
+        */
     end
 endmodule
