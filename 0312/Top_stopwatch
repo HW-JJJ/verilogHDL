@@ -3,12 +3,13 @@
 module TOP_stopwatch(
     input clk,
     input reset,
-    input sw_mode,
+    input [1:0] sw_mode,
     input btn_run,
     input btn_clear,
     output [3:0] fnd_comm,
-    output [7:0] fnd_font 
-    );
+    output [7:0] fnd_font, 
+    output [3:0] led
+);
 
     wire w_run, w_clear, run, clear;
     wire [6:0] msec; 
@@ -59,5 +60,26 @@ module TOP_stopwatch(
        .hour(hour),
        .fnd_font(fnd_font),
        .fnd_comm(fnd_comm)
-    );    
+    );
+    
+    led_display U_led_display(
+    .sw_mode(sw_mode),
+    .led(led)
+);
+
 endmodule
+
+module led_display(
+    input [1:0] sw_mode,
+    output reg [3:0] led
+);
+    always @(*) begin
+        case(sw_mode)
+        2'b00 : led = 4'b0001;
+        2'b01 : led = 4'b0010;
+        2'b10 : led = 4'b0100;
+        2'b11 : led = 4'b1000;
+        default : led = 4'b0000;
+        endcase
+    end
+endmodule 
