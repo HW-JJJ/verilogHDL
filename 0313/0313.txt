@@ -1,0 +1,68 @@
+0313
+
+9. system task & system fuction  
+
+$write 한줄씩만 출력
+$display == printf
+$monitor
+$fclose
+$fdisplay
+
+$finish 시뮬레이션 종료
+$stop 	시뮬레이션 정지
+
+$time 
+$realtime
+
+$rtoi 실수에서 정수로 // 정수연산과 실수의 오차를 비교분석할때
+$itor 정수에서 실수로 
+
+$random 자동 test시 사용
+
+출력형식 이스케이프 인자 %h, %d %b %c %s...
+
+**always if else 우선순위
+
+**3-state bus 
+다수 신호원들이 공동으로 사용하는 버스에 데이터를 보내거나 신호원과 격리시켜 z으로 만드는 회로
+
+책의 bufif1 사용 xxxxxxx
+
+assign bus_data = ena? dataa :
+		 edb? datab : 8'hzz; 주로 assign을 사용하는 방식으로 
+
+**latch - 초기값 명시, default값 명시
+
+시계 dp와 스탑워치 dp 다른 부분들
+
+
+## UART  Universal Asynchronous Receiver/Transmitter
+표준 비동기식 송수신기
+
+clk에 따라 움직이지 않는 -> clk 필요 x
+**uart는 어떤 기준으로 동작해야하나 -> time ( baud rate - 1초에 보낼수 있는 신호의 총 비트 수 )
+-> 시간 폭이 정해져있어야 하며, 신호가 유무에 따라 
+ttl 레벨 5v로는 불충분 -> rs232 12v swing -> 변환기 usb
+
+parity bit =>  1의 개수가 odd or even  이  되도록 채운다 => option
+
+uart gnd -> 기준점
+
+rx - tx 
+full duplex
+half duplex
+
+시작비트 - bit0 .... 스탑 비트
+bit가 몇비트인지 알려주는 부분 x
+
+flow controll
+
+결정해야하는 부분 -> 시간(baud rate), 비트수, 패리티비트
+
+# pin_map을 잘 협의해야 excel 등으로 fpga를 사용한 implementation을 주로 칩설계자도함
+# 장치관리자에서 포트 번호 확인
+
+# B/R 9600bps
+# DATABIT 8bit
+# STOPBIT 1
+# PARITY none
