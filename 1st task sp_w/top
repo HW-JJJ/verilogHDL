@@ -18,25 +18,17 @@ module TOP(
     wire [3:0] w_btn_sch, w_btn_wch;
 
     // u0  l1 w2 d3
-    demux_btn U0_demux_btn(
-        .sw_mode(sw_mode[1]),
-        .btn(btn),
-        .btn_sch(w_btn_sch),
-        .btn_wch(w_btn_wch)
-    );
-    
-    btn_debounce U1_1_btn_debounce_run(
-        .clk(clk),
-        .reset(reset), // reset
-        .i_btn(w_btn_sch[1]), // run
-        .o_btn(w_run)
-    );
 
-    btn_debounce U1_2_btn_debounce_clear(
+    btn_controller U_0_btn_controller(
         .clk(clk),
-        .reset(reset), // reset
-        .i_btn(w_btn_sch[2]), // clear
-        .o_btn(w_clear)
+        .reset(reset),
+        .btn(btn),
+        .sw_mode(sw_mode[1]),
+        .run(w_run),
+        .clear(w_clear),
+        .sec(w_sec),
+        .min(w_min),
+        .hour(w_hour)
     );
 
     TOP_stopwatch U1_TOP_stopwatch( // stopwatch - run&clear
@@ -50,28 +42,7 @@ module TOP(
         .o_hour(w_hour_sch)
     );
 
-    btn_debounce U2_1_btn_debounce_sec(
-        .clk(clk),
-        .reset(reset), // reset
-        .i_btn(w_btn_wch[0]), // sec
-        .o_btn(w_sec)
-    );
-    
-    btn_debounce U2_2_btn_debounce_min(
-        .clk(clk),
-        .reset(reset), // reset
-        .i_btn(w_btn_wch[3]), // min
-        .o_btn(w_min)
-    );
-    
-    btn_debounce U3_2_btn_debounce_hour(
-        .clk(clk),
-        .reset(reset), // reset
-        .i_btn(w_btn_wch[1]), // hour
-        .o_btn(w_hour)
-    );
-
-    watch_dp U2_watch(
+    watch U2_watch(
         .clk(clk),
         .reset(reset), // reset
         .sec(w_sec),
@@ -118,30 +89,6 @@ module TOP(
         .sw_mode(sw_mode),
         .led(led)
     );      
-endmodule
-
-module demux_btn(
-    input sw_mode,
-    input [3:0] btn,
-    output reg [3:0] btn_sch,
-    output reg [3:0] btn_wch
-);
-    always @(*) begin
-        case(sw_mode)
-            1'b0 : begin
-                btn_sch = btn;  // sw_mode媛� 0�씪 �븣 btn_sch�뿉 btn �엯�젰
-                btn_wch = 4'h0; // btn_wch�뒗 0�쑝濡� 珥덇린�솕
-            end
-            1'b1 : begin
-                btn_sch = 4'h0; // btn_sch�뒗 0�쑝濡� 珥덇린�솕
-                btn_wch = btn;  // sw_mode媛� 1�씪 �븣 btn_wch�뿉 btn �엯�젰
-            end
-            default : begin
-                btn_sch = 4'h0;
-                btn_wch = 4'h0;
-            end
-        endcase    
-    end
 endmodule
 
 module mux_2x1_bcd(
