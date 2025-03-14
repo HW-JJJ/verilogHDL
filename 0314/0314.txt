@@ -1,0 +1,70 @@
+0314
+
+11. 순차회로 모델링
+
+d latch
+d f/f
+
+동기식 / 비동기식 reset
+- sensitivity에 clk와 같이 reset이 있어 clk 영향을 받지 않으면 비동기식
+
+동기식 reset 주로 ASIC 
+장점 : METASTABLE이 발생 X
+
+비동기식 reset 주로 FPGA
+
+**# CODING GUIDELINE
+1. S.L , F/F/ , LATCH -> NON-BLOCKING ASSIGNMNET
+2. C.L BLOCKING ASSIGNMNET
+3. 동일 ALWAYS BLOCK 안에 S.L,C.L 혼용시 NON_BLOCKING
+4. 동일 BLOCK 내 NB,B 혼용 X
+5. 다수 ALWAYS 블록에 동일 REG 변수에 값 할당 X
+** 교재 P324
+
+# COUNTER 
+SYNC	: F/F CLK 엣지 마다 카운트
+ASYNC	: 첫 단 F/F 에 CLK인가시 F/F출력이 다음단 F/F트리거 : 속도 느림
+
+# SR
+CLK 인가시 F/F 저장된 데이터가 L OR R로 SHIFT
+
+**
+SISO : 1bit <-> 1bit
+SIPO : ex) UART 1bit씩 받아 8bit쏨 (입력비트를 받아 bus로 전송시) == (interface -> cpi)
+PISO : 
+PIPO : ex) register, bus 통신 , load pin 필요 -> 입력이 나갈건지 출력이 들어올건지
+
+transiver : high speed
+
+## clk_div
+duty cycle 고려
+
+# LFSR 선형귀환 SR
+N-bit SR에 의해 최대 2^N개 의사 난수 시퀀스 생성 
+시스템 IC의 내장형 자기진단 회로(BIST 회로)에 사용
+
+## FSM 유한상태머신
+*CODING GUIDE
+1. FSM 상태를 주로 PARAMETER로 정의
+2. 주로 비동기식 RESET
+3. (1) NEXT STATE (2) 상태 REGISTER (3) OUTPUT LOGIC
+4. LATCH 피하기
+5. CASE문 모델링, DEFAULT 정의
+
+출력 F/F 사용? --  NOISE AVOID
+
+** MEALY FSM 
+면접/입사시험 
+연속 0 OR 1 검출, 0과 1 패턴 찾기
+
+UART FSM상태도 ASM
+
+## UART 
+
+서로간의 통신규격은 맞춰야
+MASTER ----(CLK)----> SLAVE
+
+주로 9600 19200 115200 
+LSB 부터 받으면 좋은 점 : 바로 연산이 가능
+
+ASCII CODE 128개 - 8bit
