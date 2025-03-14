@@ -9,13 +9,11 @@ module tb_uart;
     wire tx_done;
     wire tx_out;
 
-    uart_ctrl dut_tx(
+    send_tx_btn dut(
         .clk(clk),
         .rst(rst),
         .btn_start(tx_start_trig),
-        .tx_in_data(tx_din),
-        .tx_done(tx_done),
-        .tx(tx_out)
+        .tx(tx)
     );
 
     always #5 clk = ~clk;
