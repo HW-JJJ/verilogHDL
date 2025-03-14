@@ -1,0 +1,59 @@
+0312
+
+function & task
+
+반복되는 행위수준 모델링를 독립된 코드로 정의
+가독성 상승 , 디비깅 용이
+
+# function : 조합논리에만 -> 지연 불가
+task : 지연(#), 타이밍(wait 등), 이벤트제어@ 가능, 주로 tb에 사용
+
+모듈이 아니므로 항상 모듈 내에 존재
+verilog는 기본적으로 모듈단위 설계
+
+function
+
+하나이상의 input 포함
+
+funtion [automatic][range of type] function_name'
+
+ex)function [7:0] getbyte;
+	input ~;
+	reg ~;
+ 	...
+   endfunction
+
+return 값을 가져야
+
+# task : 순차 모델링 가능
+
+컴파일러 지시어
+1. 문자매크로
+`define `undef a b
+reg a 자주 사용되는 문자, 상수 정의
+
+ex) `define ws 32
+reg [1:`ws] data; -> `를 항상 매크로한 상수에 붙여주며 사용
+
+2. 시간 매크로
+`timescale 동작시간단위 / 해석시간단위
+-> 동작시간단위 -> delay 해석시간단위 -> testbench 단위
+포함하지 않으면 시뮬레이션 에러
+
+3. 파일 삽입 지시어
+`include "filename" 
+모듈과 모듈 사이에 주로 넣음
+
+4. 선택적 컴파일 지시어
+`ifdef `ifndef `else `elseif
+
+# system task
+디스플레이 st , 파일 입출력 처리용 st
+
+### PPT 5~10장++
+1. BLOCK DIAGRAM
+2. 설계도
+3.  알고리즘 (동작 흐름도 -FSM 상태도)
+4. 강조할 부분 (DATAPATH)
+5. 시뮬레이션
+6. 결론
