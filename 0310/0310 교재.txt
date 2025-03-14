@@ -1,0 +1,59 @@
+0310 
+
+교재
+
+always 구문
+조합회로
+순차회로 - d f/f
+
+** blocking  vs  non-blocking
+   순차적 실행       동시에 실행
+     조합회로에서     순차회로에서 
+
+alway가 testbench에서 사용될때
+주로 clk생성시
+
+reg 변수 default 초기값은 x이므로 initial 구문으로 초기값 지정해줘야
+deadlock 교착상태 를 만들지 않도록
+
+initial 구문
+시뮬레이션 진행시 한번만 
+
+** 동기식/비동기식 -> clk과 관련
+sensitivity list에 같이 있으면 주로 비동기
+
+case 문 x와 z값 포함된 경우 명확한 결과 제공
+인코더 - casex, casez 
+
+반복문
+합성시엔 반복 배치
+
+forever statement : 조건없이 무한 반복 - 시뮬레이션에서만 사용
+repeat(exp) statement : 지정된 횟수만큼 반복
+while(exp) statement : 조건 참일때까지 반복실행 주로 반복 횟수 명확히 모를떄
+for (variable assign; exp ; variable assign) statement : 반복제어 변수 초기값에서 조건참일떄 반복실행
+
+지연 제어 : #delay_value;
+ex) #50;
+
+이벤트 제어 : @()
+event ~;
+
+Wait(exp) statement; : ()가 발생할 때 까지 
+
+fork ~ join : ~ 내 statement 동시 실행 회로합성 x -> 테스트벤치에서만
+
+유한 상태 머신
+
+정해진 수의 상태를 가지고 상태 간의 천이에 의해 출력 생성하는 회로
+moore machine : 단지 현재상태에 의해 출력 결정
+mealy machine : 현재 상태와 입력에 의해 출력 결정
+
+1. state seqencial logic : 클럭 기준 현재 상태 저장 후 업데이트
+2. next combinational logic : 현재 상태나 입력에 따라 다음 상태 결정
+3. output logic : 출력할 것 결정
+
+mealy fsm 회로  
+mealy와 moore의 차이 :  상태도에 따른 출력 1clk 차이 발생 
+
+** data path
