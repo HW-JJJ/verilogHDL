@@ -66,3 +66,10 @@ flow controll
 # DATABIT 8bit
 # STOPBIT 1
 # PARITY none
+
+UART - LSB FIRST 
+I2C, SPI - MSB FIRST 데이터 시트 읽을때 주의
+
+## trigger(btn), tick발생기, fsm_state
+
+
