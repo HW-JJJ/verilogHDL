@@ -1,0 +1,95 @@
+`timescale 1ns / 1ns  // 1ns �ػ� (100MHz Ŭ�� �׽�Ʈ ����)
+
+module tb_TOP;
+    reg clk, reset;
+    reg [1:0] sw_mode;
+    reg [3:0] btn;
+    wire [7:0] fnd_font;
+    wire [3:0] fnd_comm;
+    wire [3:0] led;
+
+    TOP DUT (
+        .clk(clk),
+        .reset(reset),
+        .sw_mode(sw_mode),
+        .btn(btn),
+        .fnd_font(fnd_font),
+        .fnd_comm(fnd_comm),
+        .led(led)
+    );
+
+    always #5 clk = ~clk; // 100MHz Ŭ�� (�ֱ� 10ns)
+
+    initial begin
+
+        clk = 0; reset = 0; sw_mode = 2'b00; btn = 4'b0000;
+
+        #1000000 reset = 1;  // 100us �� ���� ����
+        
+        #1000000 reset = 0;
+        
+        // Mode 00: 
+        #5000000 sw_mode = 2'b00;  // 50ms �� ��� ����
+        #5000000 btn[1] = 1;  // run (100ms ����)
+        #5000000 btn[1] = 0;
+
+        #5000000;  // 50ms ���
+
+        #5000000 btn[1] = 1;  // stop (100ms ����)
+        #5000000 btn[1] = 0;  // ��ư ���� (100ms ��)
+
+        #5000000 btn[2] = 1;  // clear (100ms ����)
+        #5000000 btn[2] = 0;  // ��ư ���� (100ms ��)
+        
+        #1000000 reset = 1;
+        #1000000 reset = 0;
+        
+        #5000000 btn[1] = 1;
+
+        #5000000;  // 50ms ���
+
+        // Mode 01: min_hour_stop_watch
+        #5000000 sw_mode = 2'b01;
+        #5000000 btn[1] = 1;  // run (100ms ����)
+        #5000000 btn[1] = 0;  // ��ư ���� (100ms ��)
+
+        #5000000;
+
+        #5000000 btn[1] = 1;  // stop (100ms ����)
+        #5000000 btn[1] = 0;  // ��ư ���� (100ms ��)
+
+        #5000000 btn[2] = 1;  // clear (100ms ����)
+        #5000000 btn[2] = 0;  // ��ư ���� (100ms ��)
+
+        #5000000;
+
+        // Mode 10:
+        #5000000 sw_mode = 2'b10;
+        #5000000 btn[0] = 1; // sec
+        #5000000 btn[0] = 0;
+        #5000000 reset = 1;
+        #5000000 reset = 0; btn[0] = 1; // sec
+        #5000000 btn[0] = 0;
+
+        #5000000;
+
+        // Mode 11: 
+        #500000 sw_mode = 2'b11;
+
+        #5000000 btn[3] = 1; // min
+        #5000000 btn[3] = 0;
+        #5000000 btn[3] = 1;
+        #5000000 btn[3] = 0;
+
+        #5000000;
+
+        #5000000 btn[1] = 1; //hour
+        #5000000 btn[1] = 0;
+        #5000000 btn[1] = 1;
+        #5000000 btn[1] = 0;
+
+        // Reset �� ����
+        #5000000;
+        $stop;
+    end
+endmodule
