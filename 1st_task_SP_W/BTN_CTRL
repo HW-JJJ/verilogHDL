@@ -1,0 +1,145 @@
+`timescale 1ns / 1ps
+
+module btn_controller(
+    input clk,
+    input reset,
+    input [3:0] btn,
+    input sw_mode,
+    output run,
+    output clear,
+    output sec,
+    output min,
+    output hour
+    );
+
+    wire [3:0] w_btn_sch, w_btn_wch;
+
+    demux_btn U0_demux_btn(
+        .sw_mode(sw_mode),
+        .btn(btn),
+        .btn_sch(w_btn_sch),
+        .btn_wch(w_btn_wch)
+    );
+
+    btn_debounce U1_1_btn_debounce_run(
+        .clk(clk),
+        .reset(reset), // reset
+        .i_btn(w_btn_sch[1]), // run
+        .o_btn(run)
+    );
+
+    btn_debounce U1_2_btn_debounce_clear(
+        .clk(clk),
+        .reset(reset), // reset
+        .i_btn(w_btn_sch[2]), // clear
+        .o_btn(clear)
+    );
+
+    btn_debounce U2_1_btn_debounce_sec(
+        .clk(clk),
+        .reset(reset), // reset
+        .i_btn(w_btn_wch[0]), // sec
+        .o_btn(sec)
+    );
+    
+    btn_debounce U2_2_btn_debounce_min(
+        .clk(clk),
+        .reset(reset), // reset
+        .i_btn(w_btn_wch[3]), // min
+        .o_btn(min)
+    );
+    
+    btn_debounce U3_2_btn_debounce_hour(
+        .clk(clk),
+        .reset(reset), // reset
+        .i_btn(w_btn_wch[1]), // hour
+        .o_btn(hour)
+    );
+endmodule
+
+module demux_btn(
+    input sw_mode,
+    input [3:0] btn,
+    output reg [3:0] btn_sch,
+    output reg [3:0] btn_wch
+);
+    always @(*) begin
+        case(sw_mode)
+            1'b0 : begin
+                btn_sch = btn;  
+                btn_wch = 4'h0; 
+            end
+            1'b1 : begin
+                btn_sch = 4'h0; 
+                btn_wch = btn;  
+            end
+            default : begin
+                btn_sch = 4'h0;
+                btn_wch = 4'h0;
+            end
+        endcase    
+    end
+endmodule
+
+module btn_debounce (
+    input clk,
+    input reset,
+    input i_btn,
+    output o_btn
+);
+
+    reg state, next;
+    reg [7:0] q_reg , q_next;
+    reg edge_detect;
+
+    wire btn_deb;
+
+    // 1Khz clk generate - ��Ȳ�� ���� �ӵ� ����
+    reg [$clog2(100) - 1 : 0] counter;
+    reg r_1khz;
+
+    always @(posedge clk, posedge reset) begin
+        if (reset) begin
+            counter <= 0;
+            r_1khz <= 1'b0;
+        end
+        else if (counter == 100 - 1) begin
+            counter <= 0;
+            r_1khz <= 1'b1;
+        end
+        else begin // 1khz tick
+            counter <= counter + 1;
+            r_1khz <= 1'b0;
+        end                   
+    end
+
+    // SR state logic
+    always @(posedge r_1khz, posedge reset) begin
+        if (reset)  begin
+            q_reg <= 0;
+        end
+        else begin
+            q_reg <= q_next;  
+        end      
+    end
+    
+    // next logic
+    always @(r_1khz, i_btn, q_reg) begin
+        q_next = {i_btn, q_reg[7:1]};  // 8SR ������ ��Ʈ �о��       
+    end
+
+    // 8-input and gate
+    assign btn_deb = &q_reg; 
+
+    // edge detector
+    always @(posedge clk, posedge reset) begin
+        if (reset) begin
+            edge_detect <= 1'b0 ;
+        end else begin
+            edge_detect <= btn_deb;
+        end
+    end
+
+    // final output
+    assign o_btn = btn_deb & (~ edge_detect);
+endmodule 
