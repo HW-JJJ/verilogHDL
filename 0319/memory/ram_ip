@@ -1,0 +1,55 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 2025/03/19 11:29:19
+// Design Name: 
+// Module Name: ram_ip
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module ram_ip #(
+    parameter ADDR_WIDTH = 4, 
+              DATA_WIDTH = 8
+)(
+    input  clk, 
+    input  wr,
+    input  [ADDR_WIDTH-1:0] w_addr,
+    input  [DATA_WIDTH-1:0] w_data,
+    output [DATA_WIDTH-1:0] r_data
+    );
+
+    reg [DATA_WIDTH-1:0] ram[0:2**ADDR_WIDTH-1];  // 2**4 = 2^4
+    //reg [DATA_WIDTH-1:0] r_data_reg;
+
+    //assign r_data = r_data_reg;
+
+
+    // write
+    always @(posedge clk) begin
+        if (wr)
+            ram[w_addr] <= w_data;
+    end
+
+    assign r_data = ram[w_addr];
+
+/*  Sequencial logic
+    // read
+    always @(posedge clk) begin
+        if (!wr)
+            r_data_reg <= ram[w_addr];        
+    end
+*/
+endmodule
