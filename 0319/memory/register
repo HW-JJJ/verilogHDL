@@ -1,0 +1,37 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: Jeong Hyun Woo
+// 
+// Create Date: 2025/03/19 10:27:56
+// Design Name: 32bit register
+// Module Name: register
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module register(
+    input   clk,
+//    input rst,
+//    input   [3:0] addr,
+    input   [31:0] d,
+    output  [31:0] q 
+);
+    reg [31:0] q_reg /*[15:0]*/;  // 32bit memory with 
+
+    assign q = q_reg /*[addr]*/;
+
+    always @(posedge clk) begin
+        q_reg /*[addr]*/ <= d;        
+    end
+endmodule
