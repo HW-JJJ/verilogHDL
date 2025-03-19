@@ -1,0 +1,54 @@
+`timescale 1ns / 1ps
+
+module tb_fifo;
+    reg clk;
+    reg reset;
+    reg wr, rd;
+    reg [7:0] w_data;
+    wire [7:0] r_data;
+    wire full, empty;
+
+   
+    fifo DUT (
+        .clk(clk),
+        .reset(reset),
+        .wr(wr),
+        .w_data(w_data),
+        .full(full),
+        .rd(rd),
+        .r_data(r_data),
+        .empty(empty)
+    );
+
+    always #5 clk = ~clk;
+
+    initial begin
+        clk = 0;
+        reset = 1;
+        wr = 0;
+        rd = 0;
+        w_data = 0;
+
+        #20 reset = 0;  
+              
+        #10;
+        
+        repeat (16) begin // wr==1 쓰기모드에서 16개 데이터를 연속으로 쓰기
+            #10;
+            wr = 1;
+            w_data = w_data + 1;
+        end
+
+        #10 wr = 0;
+        
+        repeat (16) begin // rd==1 읽기모드에서 16개 데이터 연속으로 읽으면 r_addr가 매 클럭 증가 
+            #10;          // 다 읽으면 empty가 다시 1이되서 레지스터에 데이터가 비었음 표시
+            rd = 1;
+        end
+
+        #10 rd = 0;
+        
+        #50;
+        $stop;
+    end
+endmodule
