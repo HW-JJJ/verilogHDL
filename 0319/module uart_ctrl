@@ -1,0 +1,41 @@
+module uart_ctrl(
+    input clk,
+    input rst,
+    // tx
+    input btn_start,
+    input [7:0] tx_in_data,
+    output tx_done,
+    output tx,
+    // rx
+    input rx,
+    output rx_done,
+    output [7:0] rx_data
+);
+
+    wire w_tick;
+
+    uart_tx U_UART_TX(
+        .clk(clk),
+        .rst(rst),
+        .tick(w_tick),
+        .start_trigger(btn_start),
+        .data_in(tx_in_data),
+        .o_tx_done(tx_done),
+        .o_tx(tx)
+    );
+
+    uart_rx U_uart_rx(
+        .clk(clk),
+        .reset(rst),
+        .tick(w_tick),
+        .rx(rx),
+        .rx_done(rx_done),
+        .rx_data(rx_data)
+);
+
+    baud_tick_gen U_BAUD_Tock_Gen(
+        .clk(clk),
+        .rst(rst),
+        .baud_tick(w_tick)
+    );
+endmodule
