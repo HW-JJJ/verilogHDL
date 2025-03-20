@@ -51,7 +51,7 @@ module tb_uart_fifo;
         .w_data(w_rx_data_fifo_rx),//
         .wr(~empty_fifo_rx),//
         .full(full_fifo_tx),//
-        .rd(~w_tx_done&~empty_fifo_tx),//
+        .rd(~w_tx_done & ~empty_fifo_tx),//
         .r_data(w_rx_data_fifo_tx),//
         .empty(empty_fifo_tx)     //   
     );
