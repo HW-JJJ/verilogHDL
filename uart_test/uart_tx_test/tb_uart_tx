@@ -1,0 +1,54 @@
+module tb_uart_tx;
+    
+    reg clk;
+    reg rst;
+    reg start_trigger;
+    reg [7:0] data_in;
+    wire tx_done;
+    wire tx;
+
+    // Instantiate the top module
+    wire w_tick;
+    
+    baud_tick_gen u0(
+        .clk(clk),
+        .rst(rst),
+        .baud_tick(w_tick)
+    );
+    
+    uart_tx u1(
+        .clk(clk),
+        .rst(rst),
+        .tick(w_tick),
+        .start_trigger(start_trigger),
+        .data_in(data_in),
+        .o_tx_done(tx_done),
+        .o_tx(tx)
+    );
+
+    always #5 clk = ~clk;
+
+    initial begin
+        // Initialize signals
+        clk = 0;
+        rst = 1;
+        start_trigger = 0;
+        data_in = 8'b01010101;
+        
+        #20;   // Wait for a few clock cycles
+        rst = 0;
+
+      #104167;   // Ensure reset is released
+
+        // Trigger UART transmission
+        start_trigger = 1;
+        #(8*104167);
+        start_trigger = 0;  // Ensure it's just a pulse
+
+        // Wait for transmission to complete
+        wait(tx_done);
+
+        #1000; // Hold simulation for observation
+        $stop;
+    end
+endmodule
