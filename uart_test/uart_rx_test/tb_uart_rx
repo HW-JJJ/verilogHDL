@@ -1,0 +1,81 @@
+module tb_uart_rx;
+
+    // Testbench signals
+    reg clk;
+    reg rst;
+    reg rx;
+    wire rx_done;
+    wire [7:0] rx_data;
+
+    // Instantiate the top module
+    wire w_tick;
+    
+    baud_tick_gen u0(
+        .clk(clk),
+        .rst(rst),
+        .baud_tick(w_tick)
+    );
+
+    uart_rx u1(
+        .clk(clk),
+        .reset(rst),
+        .tick(w_tick),
+        .rx(rx),
+        .rx_done(rx_done),
+        .rx_data(rx_data)
+    );
+
+    // Clock generation
+    always begin
+        #5 clk = ~clk; // 100MHz clock
+    end
+
+    // Test stimulus
+    initial begin
+        // Initialize signals
+        clk = 0;
+        rst = 0;
+        rx = 1;  // Idle state for UART (high)
+
+        // Apply reset
+        rst = 1;
+        #20;
+        rst = 0;
+        
+        // Transmit a byte (0xA5)
+        // Start bit: 0, Data bits: 01010101, Stop bit: 1
+        
+        // Start bit
+        #104167;
+        rx = 0; // Start bit // Wait for 1 baud rate tick (9600 baud rate, clock tick duration)
+        
+        // Data bits
+        #104167; rx = 1; // 1 bit (bit 0)
+        #104167; rx = 1; // 0 bit (bit 1)
+        #104167; rx = 1; // 1 bit (bit 2)
+        #104167; rx = 1; // 0 bit (bit 3)
+        #104167; rx = 1; // 1 bit (bit 4)
+        #104167; rx = 1; // 0 bit (bit 5)
+        #104167; rx = 1; // 1 bit (bit 6)
+        #104167; rx = 1; // 0 bit (bit 7)
+
+        // Stop bit
+        #104167; rx = 1; // Stop bit
+        
+        // Wait for rx_done signal
+        wait(rx_done == 1);
+
+        // Display received data
+        $display("Received Data: %h", rx_data);
+
+        // End simulation
+        #100;
+        $finish;
+    end
+
+    // Monitoring the rx_done signal
+    initial begin
+        $monitor("At time %t, rx_done = %b, rx_data = %h", $time, rx_done, rx_data);
+    end
+
+endmodule
