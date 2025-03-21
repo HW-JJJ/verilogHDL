@@ -1,0 +1,55 @@
+module tb_uart_sp_cu;
+    
+    reg clk;
+    reg reset;
+    reg rx;
+    wire run,clear,sec,min,hour;
+
+    uart_stopwatch_cu DUT(
+        .clk(clk),
+        .reset(reset),
+        .rx(rx),
+        .run(run),
+        .clear(clear),
+        .sec(sec),
+        .min(min),
+        .hour(hour) 
+    );
+
+    always #5 clk = ~clk;
+
+    initial begin
+        // 초기화
+        clk = 0;
+        reset = 0;
+        rx = 0;
+
+        // 리셋
+        reset = 1;
+        #10 reset = 0;
+
+        // "R" (8'h52) 전송
+        send_data(8'h52);  // "R" - run 신호가 1로 설정되어야 함
+        #20; // 약간의 지연 후
+
+        // "C" (8'h43) 전송
+        send_data(8'h43);  // "C" - clear 신호가 1로 설정되어야 함
+        #20; // 약간의 지연 후
+        
+        // 시뮬레이션 종료
+        $finish;
+    end
+
+    // 데이터를 rx에 전송하는 함수
+    task send_data;
+        input [7:0] data;
+        integer i;
+        begin
+          
+            for (i = 7; i >= 0; i = i - 1) begin
+                rx = data[i];
+                #10; 
+            end
+        end
+    endtask
+endmodule
