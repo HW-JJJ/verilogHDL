@@ -1,0 +1,61 @@
+module uart_stopwatch_cu(
+    input clk,
+    input reset,
+    input rx,       // 수신되는 비트
+    output reg run, clear, sec, min, hour
+);
+
+    reg [7:0] rx_data_reg, rx_data_next; // 수신된 8비트 데이터를 저장
+    reg [2:0] bit_count_reg, bit_count_next; // 비트 카운터
+
+    // rx_data 및 bit_count 갱신
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            rx_data_reg <= 8'h00;
+            bit_count_reg <= 3'b000;
+        end else begin
+            bit_count_reg <= bit_count_next;
+            rx_data_reg <= rx_data_next;
+        end
+    end
+
+    // Control algorithm
+    always @(*) begin
+        // 기본값 설정
+        run = 1'b0;
+        clear = 1'b0;
+        sec = 1'b0;
+        min = 1'b0;
+        hour = 1'b0;
+
+        rx_data_next = {rx_data_reg[6:0], rx};
+
+        if (bit_count_reg == 7) begin
+            bit_count_next = 0; 
+
+                case (rx_data_reg)
+                
+                8'h52 : run = 1'b1;
+                
+                8'h43 : clear = 1'b1;
+               
+                8'h73 : sec = 1'b1;
+                
+                8'h6d : min = 1'b1;
+                
+                8'h68 : hour = 1'b1;
+                
+                default : begin
+                    run = 1'b0;
+                    clear = 1'b0;
+                    sec = 1'b0;
+                    min = 1'b0;
+                    hour = 1'b0;
+                end
+            endcase
+        end 
+        else begin
+            bit_count_next = bit_count_reg + 1; // 비트 카운트 증가
+        end
+    end
+endmodule
