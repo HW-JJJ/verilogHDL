@@ -1,0 +1,76 @@
+`timescale 1ns / 1ns
+
+module top_project(
+    input clk,
+    input reset,
+    input rx,
+    output tx,
+    // clock
+    input [1:0] sw_mode, 
+    input [3:0] btn,
+    output [7:0] fnd_font,
+    output [3:0] fnd_comm,
+    output [3:0] led
+    );
+
+    wire w_tick, w_bit;
+    wire w_run_btn, w_clear_btn, w_sec_btn, w_min_btn, w_hour_btn;
+    wire w_run_uart, w_clear_uart, w_sec_uart, w_min_uart,w_hour_uart;
+
+    assign w_run = w_run_btn | w_run_uart;
+    assign w_clear = w_clear_btn | w_clear_uart;
+    assign w_sec = w_sec_btn | w_sec_uart;
+    assign w_min = w_min_btn | w_min_uart;
+    assign w_hour = w_hour_btn | w_hour_uart;
+
+    uart U_uart(
+        .clk(clk),
+        .reset(reset),
+        .rx(rx),
+        .tx(tx)
+    );
+
+    uart_cu U_uart_cu(
+        .clk(clk),
+        .reset(reset),
+        .tick(w_tick),
+        .rx(tx),
+        .run(w_run_uart),
+        .clear(w_clear_uart),
+        .sec(w_sec_uart),
+        .min(w_min_uart),
+        .hour(w_hour_uart)
+    );
+
+    btn_controller U_btn_controller(
+        .clk(clk),
+        .reset(reset),
+        .btn(btn),
+        .sw_mode(sw_mode[1]),
+        .run(w_run_btn),
+        .clear(w_clear_btn),
+        .sec(w_sec_btn),
+        .min(w_min_btn),
+        .hour(w_hour_btn)
+    );
+
+    clock U_clock(
+        .clk(clk),
+        .reset(reset),
+        .sw_mode(sw_mode), // sw0
+        .run(w_run),
+        .clear(w_clear),
+        .sec(w_sec),
+        .min(w_min),
+        .hour(w_hour),
+        .fnd_font(fnd_font),
+        .fnd_comm(fnd_comm),
+        .led(led)
+    );
+
+    baud_tick_gen U_baud_tick_gen(
+        .clk(clk),
+        .rst(reset),
+        .baud_tick(w_tick)
+    );
+endmodule
