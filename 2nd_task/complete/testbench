@@ -1,0 +1,135 @@
+`timescale 1ns / 1ns
+
+module top_project_tb;
+    reg clk;
+    reg reset;
+    reg rx;
+    reg [1:0] sw_mode;
+    reg [3:0] btn;
+    wire tx;
+    wire [7:0] fnd_font;
+    wire [3:0] fnd_comm;
+    wire [3:0] led;
+    
+    // 100MHz clock generation
+    always #5 clk = ~clk;
+    
+    // Instantiate DUT
+    top_project uut (
+        .clk(clk),
+        .reset(reset),
+        .rx(rx),
+        .tx(tx),
+        .sw_mode(sw_mode),
+        .btn(btn),
+        .fnd_font(fnd_font),
+        .fnd_comm(fnd_comm),
+        .led(led)
+    );
+    
+    task send_uart_byte;
+        input [7:0] data;
+        integer i;
+        begin
+            rx = 0; // Start bit
+            #104167;
+            for (i = 0; i < 8; i = i + 1) begin
+                rx = data[i];
+                #104167;
+            end
+            rx = 1; // Stop bit
+            #104167;
+        end
+    endtask
+    
+    initial begin
+        // Initialize inputs
+        clk = 0;
+        reset = 1;
+        rx = 1;
+        sw_mode = 2'b00;
+        btn = 4'b0000; 
+        
+        // Wait for some time and release reset
+        #100;
+        reset = 0;
+        
+        // Send 'R' (8'h52) to start stopwatch
+        #500000; send_uart_byte(8'h52);
+        #2000000; // 🔹 UART 명령 후 충분한 대기 (2ms)
+
+        // 100ms 대기하여 msec 증가 확인
+        #100000000;
+
+        // Wait and send 'R' again to stop stopwatch
+        #500000; send_uart_byte(8'h52);
+        #2000000; // 🔹 대기 추가
+
+        // Wait and send 'C' (8'h43) to clear stopwatch
+        #500000; send_uart_byte(8'h43);
+        #2000000; // 🔹 대기 추가
+
+        #100000;
+        sw_mode = 2'b10;
+        #100000000; // 모드 변경 후 안정화 대기
+
+        // Send 's' (8'h73) to sec watch
+        #500000; send_uart_byte(8'h73);
+        #2000000; // 🔹 대기 추가
+
+        #100000;
+        sw_mode = 2'b11;
+        #100000000; // 모드 변경 후 안정화 대기
+
+        // Send 'm' (8'h6D) to min watch
+        #500000; send_uart_byte(8'h6D);
+        #2000000; // 🔹 대기 추가
+
+        // Send 'h' (8'h68) to hour watch
+        #500000; send_uart_byte(8'h68);
+        #2000000; // 🔹 대기 추가
+
+        #100000000;
+
+        #1000 reset = 1;
+        #1000 reset = 0;
+
+        #100000;
+        sw_mode = 2'b00;
+        #100000000; // 모드 변경 후 안정화 대기
+
+        // 버튼 입력 테스트 (스톱워치 관련)
+        #1000000; btn = 4'b0010;
+        #1000000; btn = 4'b0000;
+
+        #100000000;
+
+        #1000000; btn = 4'b0010;
+        #1000000; btn = 4'b0000;
+
+        #100000000;
+
+        #1000000; btn = 4'b0100;
+        #1000000; btn = 4'b0000;
+
+        #100000;
+        sw_mode = 2'b10;
+        #100000000; // 모드 변경 후 안정화 대기
+
+        #1000000; btn = 4'b0001;
+        #1000000; btn = 4'b0000;
+
+        #100000;
+        sw_mode = 2'b11;
+        #100000000; // 모드 변경 후 안정화 대기
+
+        #1000000; btn = 4'b1000;
+        #1000000; btn = 4'b0000;
+
+        #1000000; btn = 4'b0010;
+        #1000000; btn = 4'b0000;
+               
+        #1000000;
+        $finish;
+    end
+endmodule
