@@ -1,0 +1,72 @@
+`timescale 1ns / 1ns
+
+module uart(
+    input clk,
+    input reset,
+    input rx,
+    output tx
+);
+    // tick gen
+    wire w_tick;
+    // rx to fifo_rx
+    wire [7:0] w_rx_data;
+    wire w_rx_done;
+
+    // fifo_rx to fifo_tx
+    wire [7:0] w_rx_data_fifo_rx;
+    wire empty_fifo_rx;
+
+    // fifo_tx to tx
+    wire [7:0] w_rx_data_fifo_tx;
+    wire empty_fifo_tx;
+    wire full_fifo_tx;
+    
+    wire w_tx_done;
+    // instance
+    uart_rx DUT1(
+        .clk(clk),
+        .reset(reset),
+        .tick(w_tick), //
+        .rx(rx),
+        .rx_done(w_rx_done),//
+        .rx_data(w_rx_data)  //  
+    );
+
+    fifo DUT2_fr(
+        .clk(clk),
+        .reset(reset),
+        .w_data(w_rx_data), //
+        .wr(w_rx_done),//
+        .full(),
+        .rd(~full_fifo_tx),//
+        .r_data(w_rx_data_fifo_rx),//
+        .empty(empty_fifo_rx)  //  
+    );
+
+    fifo DUT3_ft(
+        .clk(clk),
+        .reset(reset),
+        .w_data(w_rx_data_fifo_rx),//
+        .wr(~empty_fifo_rx),//
+        .full(full_fifo_tx),//
+        .rd(~w_tx_done),//
+        .r_data(w_rx_data_fifo_tx),//
+        .empty(empty_fifo_tx)     //   
+    );
+
+    uart_tx DUT4(
+        .clk(clk),
+        .rst(reset),
+        .tick(w_tick),
+        .start_trigger(~empty_fifo_tx),//
+        .data_in(w_rx_data_fifo_tx),//
+        .o_tx_done(w_tx_done),//
+        .o_tx(tx)
+    );
+
+    baud_tick_gen DUT5(
+        .clk(clk),
+        .rst(reset),
+        .baud_tick(w_tick)
+    );
+endmodule
