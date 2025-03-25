@@ -1,0 +1,21 @@
+`timescale 1ns/1ns
+
+module distance_caculator (
+    input clk,
+    input reset,
+    input echo,
+    input [14:0] echo_count,
+    output reg [8:0] distance
+);
+
+    always @(posedge clk, posedge reset) begin
+        if (reset) begin
+            distance <= 0;
+        end
+        else begin
+            if (echo == 1'b0) begin
+                distance <= echo_count / 58;
+            end
+        end       
+    end
+endmodule
