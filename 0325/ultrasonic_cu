@@ -1,0 +1,91 @@
+`timescale 1ns / 1ns
+
+module ultrasonic_cu(
+    input clk,
+    input reset,
+    input start_trigger,
+    input tick,
+    input echo,
+    output trigger_tick,
+    output [14:0] echo_count
+    );
+
+    parameter   IDLE = 2'b00,
+                START = 2'b01,
+                WAIT = 2'b10,
+                HIGH_LEVEL_COUNT = 2'b11;
+
+    reg [1:0] state, next;
+    reg [3:0] tick_count_reg, tick_count_next;
+    reg [14:0] echo_count_reg, echo_count_next;
+    reg tick_reg, tick_next;
+
+    assign trigger_tick = tick_reg;
+    assign echo_count =  echo_count_reg;
+
+    always @(posedge clk, posedge reset) begin
+        if (reset) begin
+            state <= IDLE;
+            tick_count_reg <= 0;
+            echo_count_reg <= 0;
+            tick_reg <= 0;
+        end
+        else begin
+            state <= next;
+            tick_count_reg <= tick_count_next;
+            echo_count_reg <= echo_count_next;
+            tick_reg <= tick_next;
+        end
+    end
+
+    always @(*) begin
+        next = state;
+        tick_next = tick_reg;
+        tick_count_next = tick_count_reg;
+        echo_count_next = echo_count_reg;
+
+        case(state)  // IDLE : START 버튼 누르면 TRIG 상태로로
+            IDLE : begin
+
+               if (start_trigger == 1'b1) begin
+                    next = START;
+                    echo_count_next = 0;
+                end               
+            end
+
+            START : begin                           
+                if(tick == 1'b1) begin
+                    if(tick_count_reg == 10 - 1) begin
+                        tick_next = 1'b0;
+                        tick_count_next = 0;
+                        next = WAIT;
+                    end          
+                    else begin
+                        tick_next = 1'b1;
+                        tick_count_next = tick_count_reg + 1;           
+                    end
+                end  
+            end
+
+            WAIT : begin
+                if(echo == 1'b1)
+                    next = HIGH_LEVEL_COUNT;
+            end
+
+            HIGH_LEVEL_COUNT : begin // ECHO 펄스가 HIGH일때의 시간을 측정하고 거리 계산
+                if(tick == 1'b1) begin
+                    if (echo_count_reg == (400 * 58)  - 1) begin // max 4m, velocity 340 m/s
+                        echo_count_next = 0;
+                    end
+                    else begin
+                        echo_count_next = echo_count_reg + 1; 
+                    end
+                end             
+                
+                if (echo == 1'b0) begin
+                    next = IDLE;
+                end                
+            end
+        endcase
+    end
+endmodule   
