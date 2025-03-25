@@ -40,9 +40,9 @@ module ultrasonic_cu(
 
     always @(*) begin
         next = state;
-        tick_next = tick_reg;
-        tick_count_next = tick_count_reg;
-        echo_count_next = echo_count_reg;
+        tick_next = tick_reg;   // 10us trigger pulse를 위한
+        tick_count_next = tick_count_reg;  // 10us trigger를 위해 1us 10개 세기 위해
+        echo_count_next = echo_count_reg;  // echo pulse의 주기 계산산
 
         case(state)  // IDLE : START 버튼 누르면 TRIG 상태로로
             IDLE : begin
@@ -55,10 +55,10 @@ module ultrasonic_cu(
 
             START : begin                           
                 if(tick == 1'b1) begin
-                    if(tick_count_reg == 10 - 1) begin
+                    if(tick_count_reg == 10) begin
                         tick_next = 1'b0;
                         tick_count_next = 0;
-                        next = WAIT;
+                        next = WAIT;  // 10us 펄스 반복을 막기위해 바로 다음 상태로 넘겨주기
                     end          
                     else begin
                         tick_next = 1'b1;
@@ -74,7 +74,7 @@ module ultrasonic_cu(
 
             HIGH_LEVEL_COUNT : begin // ECHO 펄스가 HIGH일때의 시간을 측정하고 거리 계산
                 if(tick == 1'b1) begin
-                    if (echo_count_reg == (400 * 58)  - 1) begin // max 4m, velocity 340 m/s
+                    if (echo_count_reg == (400 * 58)  - 1) begin // max 4m (400cm), velocity 340 m/s
                         echo_count_next = 0;
                     end
                     else begin
@@ -89,3 +89,12 @@ module ultrasonic_cu(
         endcase
     end
 endmodule   
+
+// point : high level count state 에서 echo pulse를 세고 다음 동작 입력 버튼 까지 값을 기억하기 위해
+// idle로 돌아간 상태에서 다음 초음파 모듈을 통한 거리를 세기 위해 start_trigger가 입력 되었을떄 
+// echo pulse time을 초기화 
+
+// wait state : echo가 start 상태에서 high level count 상태로 넘어갈때 echo가 0인지 1인지 확실하지 않기 때문에 
+// 추가적인 wait state를 넣어서 echo 가 high인지 low인지를 명확시 하고 high level state 로 넘어감
+
+// 버튼을 누르고 한 tick 후에 tick_reg가 high로 가서 10us 펄스를 만드는데 이 부분의 타이밍에 대해 생각해야야
