@@ -1,0 +1,29 @@
+`timescale 1ns / 1ns
+
+module top_dht11(
+    
+    input clk,
+    input reset,
+    input btn_start,      
+    inout dht_io,
+
+    output [3:0] led
+);
+
+    wire w_tick;
+
+    tick_gen U_tick_gen(
+        .clk(clk),
+        .reset(reset),
+        .tick(w_tick) 
+    );
+
+    dht11_controller U_dht11_controller(
+        .clk(clk),
+        .reset(reset),
+        .btn_start(btn_start),
+        .tick(w_tick),         // 1us tick
+        .dht_io(dht_io),
+        .led(led)
+    );
+endmodule
