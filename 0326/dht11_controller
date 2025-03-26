@@ -48,16 +48,21 @@ module dht11_controller(
         if(reset) begin
             state               <= IDLE;
             count_reg           <= 0;
+            bit_count_reg       <= 0;  // 추가
+            data_reg            <= 0;  // 추가
             io_out_reg          <= 1'b1;
             io_oe_reg           <= 0;
             led_ind_reg         <= 0;
         end
-        else
+        else begin
             state               <= next;
             count_reg           <= count_next;
+            bit_count_reg       <= bit_count_next;  // 추가
+            data_reg            <= data_next;  // 추가
             io_out_reg          <= io_out_next;
             io_oe_reg           <= io_oe_next;
             led_ind_reg         <= led_ind_next;
+        end
     end
     
     always @(*) begin
