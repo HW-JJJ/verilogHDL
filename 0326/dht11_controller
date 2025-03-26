@@ -147,15 +147,25 @@ module dht11_controller(
                     next = DATA_DIC;
                 end
             end
-
             DATA_DIC : begin
-
-                if(count_reg < 40) begin
-                    data_next[bit_count_reg] = 1'b0;
-                    data_next = {data_reg[39:1],1'b0};
+                if (dht_io == 1'b1) begin
+                    count_next = count_reg + 1;  // HIGH가 유지되는 시간 측정
                 end
                 else begin
-                    data_next[bit_count_reg] = 1'b1;
+                    // HIGH가 끝났을 때 저장
+                    if (count_reg < DATA_DICISION) begin
+                        data_next = {data_reg[38:0], 1'b0};  // 40µs보다 짧으면 0
+                    end
+                    else begin
+                        data_next = {data_reg[38:0], 1'b1};  // 40µs보다 길면 1
+                    end
+            
+                    bit_count_next = bit_count_reg + 1;
+                    count_next = 0;
+            
+                    if (bit_count_reg == 39) begin
+                        next = DONE;  // 40비트 수집 완료 후 DONE 상태로 이동
+                    end
                 end
             end
 
