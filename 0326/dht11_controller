@@ -1,0 +1,173 @@
+`timescale 1ns/1ns
+
+module dht11_controller(
+    input clk,          // 100mhz on fpga oscillator
+    input reset,
+    input btn_start,    // start trigger
+    input tick,         // 1us tick
+    inout dht_io,       // 1-wire data path
+
+    //output [15:0] humidity,
+    //output [15:0] temparature,
+    output [3:0] led // state 변화 확인을 위한 led
+);
+    parameter   SEND            = 1800, 
+                WAIT_RESPONCE   = 3 , 
+                SYNC            = 8, 
+                DATA_COMMON     = 5,  // 대기 
+                DATA_DICISION   = 4,  // 40us 기준  -> 짧으면 0, 길면 1
+                STOP            = 5,  // 데이터 다 받고 다시 high 상태 가기전 대기시간
+                TIME_OUT        = 2000;
+
+    localparam  IDLE        = 0, // 초기상태
+                START       = 1, // 입력 trigger
+                WAIT        = 2, // 응답 대기
+            //  READ    = 3;
+                SYNC_LOW    = 3, // dht11로 부터 응답 받음
+                SYNC_HIGH   = 4, // 데이터 송수신전 대기
+                DATA_SYNC   = 5, // 온습도 데이터(40bit) 송수신
+                DATA_DIC    = 6, // 통신 종료후 다시 high로로
+                DONE        = 7; // 데이터 송수신 종료 후 다시 PULL UP HIGH 상태로로
+
+    reg [2:0] state, next;
+    reg [$clog2(TIME_OUT)-1:0] count_reg, count_next;
+    
+
+    reg io_out_reg, io_out_next;
+    reg io_oe_reg, io_oe_next;
+    reg led_ind_reg, led_ind_next;
+
+    reg [5:0] bit_count_reg, bit_count_next;  // 40 bit 데이터 받기위한 
+    reg [39:0] data_reg, data_next; // 온습도 데이터를 레지스터에 저장장
+
+    // out 3 state on/off
+    assign dht_io = (io_oe_reg) ? io_out_reg :1'bz;
+    assign led  = {led_ind_reg,state};
+
+    always @(posedge clk, posedge reset) begin
+        if(reset) begin
+            state               <= IDLE;
+            count_reg           <= 0;
+            io_out_reg          <= 1'b1;
+            io_oe_reg           <= 0;
+            led_ind_reg         <= 0;
+        end
+        else
+            state               <= next;
+            count_reg           <= count_next;
+            io_out_reg          <= io_out_next;
+            io_oe_reg           <= io_oe_next;
+            led_ind_reg         <= led_ind_next;
+    end
+    
+    always @(*) begin
+        next                 = state;
+        count_next           = count_reg;
+        io_out_next          = io_out_reg;
+        io_oe_next           = io_oe_reg;
+        led_ind_next         = 0;
+
+        case (state)
+            IDLE : begin
+                io_out_next = 1'b1;
+                io_oe_next  = 1'b1;
+
+                if (btn_start == 1'b1) begin
+                    next       = START;
+                    count_next = 0;
+                end
+            end
+
+            START : begin
+                io_out_next = 1'b0;
+
+                if(tick == 1'b1)begin
+                    if(count_reg == SEND -1) begin                        
+                        next       = WAIT;
+                        count_next = 0;
+                    end
+                    else begin                     
+                        count_next = count_reg + 1;
+                    end
+                end
+            end
+
+            WAIT : begin
+                io_out_next = 1'b1;
+
+                if(tick == 1'b1) begin
+                    if(count_reg == WAIT_RESPONCE - 1) begin
+                        next       = SYNC_LOW;
+                        count_next = 0;
+                    end
+                    else begin
+                        count_next = count_reg + 1;
+                    end
+                end
+            end
+/* for middle testbench
+            READ : begin
+                // io oe change
+                // output open - high z
+                io_oe_next = 1'b0;
+
+                if(tick == 1'b1) begin
+                    if(count_reg == TIME_OUT) begin
+                        next       = IDLE;
+                        count_next = 0;
+                    end
+                    else begin
+                        count_next = count_reg +1;
+                    end
+                end
+
+                if (dht_io == 1'b0) begin
+                    led_ind_next = 1'b1;
+                end
+                else begin
+                    led_ind_next = 1'b0;
+                end
+                
+            end
+*/
+            SYNC_LOW : begin
+                if(dht_io == 1'b1) begin
+                    next = SYNC_HIGH;
+                end
+            end
+
+            SYNC_HIGH : begin
+                if(dht_io == 1'b0) begin
+                    next = DATA_SYNC;
+                end
+            end
+            
+            DATA_SYNC : begin
+                if(dht_io == 1'b1) begin
+                    next = DATA_DIC;
+                end
+            end
+
+            DATA_DIC : begin
+
+                if(count_reg < 40) begin
+                    data_next[bit_count_reg] = 1'b0;
+                    data_next = {data_reg[39:1],1'b0};
+                end
+                else begin
+                    data_next[bit_count_reg] = 1'b1;
+                end
+            end
+
+            DONE : begin
+                if(count_reg == STOP - 1) begin
+                    next = IDLE;
+                    io_out_next = 1'b1;
+                end
+                else begin
+                    count_next = count_reg + 1;
+                end
+            end
+        endcase        
+    end
+endmodule
