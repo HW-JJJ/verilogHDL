@@ -1,0 +1,119 @@
+`timescale 1ns / 1ns
+
+module uart_cu (
+    input clk,
+    input reset,
+    input tick,
+    input rx,
+    output reg run
+);
+
+    reg [7:0] rx_data_reg, rx_data_next;
+    reg rx_done_reg, rx_done_next;
+    reg [1:0] state, next;
+    reg [2:0] bit_count_reg, bit_count_next;
+    reg [4:0] tick_count_reg, tick_count_next;
+
+    localparam  IDLE  = 0,
+                START = 1,
+                DATA  = 2,
+                STOP  = 3;
+
+
+    assign rx_done = rx_done_reg;
+    assign rx_data = rx_data_reg;
+
+    always @(posedge clk, posedge reset) begin
+        if(reset) begin
+            state           <= IDLE;
+            rx_done_reg     <= 0;
+            rx_data_reg     <= 0;
+            bit_count_reg   <= 0;      
+            tick_count_reg  <= 0;
+        end
+        else begin
+            state           <= next;
+            rx_done_reg     <= rx_done_next;
+            rx_data_reg     <= rx_data_next;
+            bit_count_reg   <= bit_count_next;      
+            tick_count_reg  <= tick_count_next;
+        end
+    end
+
+    always @(*) begin
+        next = state;
+        tick_count_next = tick_count_reg;
+        bit_count_next = bit_count_reg;
+        rx_data_next = rx_data_reg;
+        rx_done_next = 1'b0;
+
+        case(state)
+            IDLE : begin 
+                tick_count_next = 0;
+                bit_count_next  = 0;                                   
+                rx_done_next    = 0;
+
+                if(rx == 1'b0) begin
+                    next = START;
+                end
+            end
+
+            START : begin 
+                if (tick == 1'b1) begin
+                    if(tick_count_reg == 7) begin
+                        next = DATA;
+                        tick_count_next = 0;
+                    end else begin
+                        tick_count_next = tick_count_reg + 1; //8 cycle
+                    end
+                end
+            end
+
+            DATA : begin 
+                if (tick == 1'b1) begin
+                    if (tick_count_reg == 15) begin
+                        rx_data_next[bit_count_reg] = rx;
+
+                        if (bit_count_reg == 7) begin
+                            next = STOP;
+                            tick_count_next = 0;
+                            bit_count_next = 0;
+                        end
+                        else begin
+                            next = DATA;
+                            bit_count_next = bit_count_reg + 1;
+                            tick_count_next = 0;
+                        end
+                    end 
+                    else begin
+                        tick_count_next = tick_count_reg + 1;
+                    end
+                end
+            end
+
+            STOP : begin 
+                if (tick == 1'b1) begin
+                    if (tick_count_reg == 23) begin // 16 parity + 8 extra
+                        next = IDLE;
+                        rx_done_next = 1'b1;
+                    end
+                    else begin
+                        tick_count_next = tick_count_reg + 1;
+                    end
+                end
+            end
+        endcase
+    end
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            run   <= 1'b0;
+        end 
+        else if (rx_done_reg) begin
+            run   <= (rx_data_reg == 8'h52);
+        end
+        else begin
+            run   <= 1'b0;
+        end
+    end
+endmodule
