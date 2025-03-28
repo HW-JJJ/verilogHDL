@@ -1,0 +1,118 @@
+module uart_text(
+    input clk,
+    input reset,
+    input start,                  // trigger when dht11 cu start
+    input [7:0] humidity,
+    input [7:0] temperature,
+    input tick,                   // baud rate tick 
+    output tx,                    // UART Text output
+    output reg done               // complete signal
+);
+
+    // state
+    localparam STATE_IDLE = 0,
+              STATE_LOAD = 1,
+              STATE_SEND = 2,
+              STATE_DONE = 3;
+
+    reg [1:0] state;
+    reg [5:0] msg_index;
+    reg [5:0] msg_length;
+    reg start_tx;
+    wire tx_done;  // uart_tx 모듈의 전송 완료 신호
+
+    // for message
+    reg [7:0] message [0:31];
+
+    // uart_tx 모듈 인스턴스 (기존에 작성한 uart_tx와 동일한 인터페이스를 가정)
+    uart_tx uart_tx_inst (
+      .clk(clk),
+      .rst(reset),
+      .tick(tick),
+      .start_trigger(start_tx),
+      .data_in(message[msg_index]),
+      .o_tx_done(tx_done),
+      .o_tx(tx)
+    );
+
+    // 상태 머신
+    always @(posedge clk or posedge reset) begin
+      if (reset) begin
+        state      <= STATE_IDLE;
+        msg_index  <= 0;
+        done       <= 0;
+        start_tx   <= 0;
+      end 
+      else begin
+        case(state)
+          STATE_IDLE: begin
+            done <= 0;
+            
+            if (start) begin
+              state <= STATE_LOAD;
+              msg_index <= 0;
+            end
+          end
+
+          STATE_LOAD: begin
+            // "humidity: xx, temperature: xx " 
+            message[0]  <= "h";
+            message[1]  <= "u";
+            message[2]  <= "m";
+            message[3]  <= "i";
+            message[4]  <= "d";
+            message[5]  <= "i";
+            message[6]  <= "t";
+            message[7]  <= "y";
+            message[8]  <= ":";
+            message[9]  <= " ";
+            // humidity 
+            message[10] <= (humidity / 10) + "0";
+            message[11] <= (humidity % 10) + "0";
+            message[12] <= ",";
+            message[13] <= " ";
+            message[14] <= "t";
+            message[15] <= "e";
+            message[16] <= "m";
+            message[17] <= "p";
+            message[18] <= "e";
+            message[19] <= "r";
+            message[20] <= "a";
+            message[21] <= "t";
+            message[22] <= "u";
+            message[23] <= "r";
+            message[24] <= "e";
+            message[25] <= ":";
+            message[26] <= " ";
+            // temperature 
+            message[27] <= (temperature / 10) + "0";
+            message[28] <= (temperature % 10) + "0";
+            // newline 
+            message[29] <= 8'h0A;
+            msg_length  <= 30;  // 전송할 총 문자 수
+            state <= STATE_SEND;
+          end
+
+          STATE_SEND: begin
+            // uart_tx 모듈에 현재 문자를 전송
+            if (!start_tx && !tx_done) begin
+              start_tx <= 1;  // 전송 트리거 발생
+            end
+            else if (start_tx && tx_done) begin
+              start_tx <= 0;
+              msg_index <= msg_index + 1;
+              if (msg_index == msg_length - 1)
+                state <= STATE_DONE;
+            end
+          end
+
+          STATE_DONE: begin
+            done <= 1;
+            state <= STATE_IDLE;
+          end
+
+          default: state <= STATE_IDLE;
+        endcase
+      end
+    end
+endmodule
